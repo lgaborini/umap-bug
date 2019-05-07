@@ -1,0 +1,241 @@
+---
+title: "UMAP"
+author: "Lorenzo"
+date: "5/5/2019"
+output: 
+   github_document:
+      toc: true
+      toc_depth: 4
+      fig_width: 5
+      fig_height: 3
+      
+---
+
+## Setup
+
+```{r setup-knitr, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE)
+```
+
+```{r setup}
+suppressPackageStartupMessages(library(tidyverse))
+
+# Setup Python to use umap conda environment
+library(reticulate)
+reticulate::use_condaenv('umap', required = TRUE)
+```
+
+## R
+
+```{r}
+# Load UMAP
+library(umap)
+
+# Prepare data
+iris_mtx <- iris[, c(1:4)]
+```
+
+
+```{r umap-plot}
+# Perform UMAP and plot
+draw_umap <- function(data_mtx, labels, method = '', n_neighbors = 15, min_dist = 0.1) {
+      
+   umap_config <- umap.defaults
+   umap_config$n_neighbors <- n_neighbors
+   umap_config$min_dist <- min_dist
+      
+   u <- umap(data_mtx, 
+             method = method, 
+             min_dist = min_dist, 
+             n_neighbors = n_neighbors, 
+             random_state=42)
+   
+   # Create data.frame with UMAP coordinates
+   df_umap <- as.data.frame(u$layout)
+   colnames(df_umap) <- c('x_umap', 'y_umap')
+   df_umap <- cbind(df_umap, labels = factor(labels))
+   
+   p <- ggplot(df_umap, aes(x_umap, y_umap)) +
+      geom_point(aes(col = labels)) +
+      labs(title = glue::glue('Method: {method}, n_neighbors: {n_neighbors}, min_dist: {min_dist}'))
+   
+   list(p = p, df = df_umap, u = u)
+}
+```
+
+
+### Sweep on `min_dist`
+
+#### Naive
+
+```{r naive-d-sweep}
+u <- umap(iris_mtx, method="naive", min_dist = 0.001)
+head(u$layout)
+
+u <- umap(iris_mtx, method="naive", min_dist = 0.1)
+head(u$layout)
+
+u <- umap(iris_mtx, method="naive", min_dist = 0.99)
+head(u$layout)
+
+```
+
+```{r naive-plot, echo=FALSE}
+draw_umap(iris_mtx, iris$Species, method = 'naive', min_dist = 0.001)$p
+draw_umap(iris_mtx, iris$Species, method = 'naive', min_dist = 0.1)$p
+draw_umap(iris_mtx, iris$Species, method = 'naive', min_dist = 0.99)$p
+```
+
+
+#### Using Python backend
+
+Embeddings do not change:
+
+```{r learn-d-sweep, collapse=TRUE}
+u <- umap(iris_mtx, method="umap-learn", min_dist = 0.001)
+head(u$layout)
+
+u <- umap(iris_mtx, method="umap-learn", min_dist = 0.1)
+head(u$layout)
+
+u <- umap(iris_mtx, method="umap-learn", min_dist = 0.99)
+head(u$layout)
+```
+
+```{r learn-d-plot, echo=FALSE}
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', min_dist = 0.001)$p
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', min_dist = 0.1)$p
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', min_dist = 0.99)$p
+```
+
+Yet `min_dist` is correctly passed to `umap-learn`:
+
+```{r learn-d-debug}
+u$UMAP
+u$config$umap_learn_args
+```
+
+
+### Sweep on `n_neighbors`
+
+#### Naive
+
+```{r naive-nn-sweep}
+u <- umap(iris_mtx, method="naive", n_neighbors = 3)
+head(u$layout)
+u <- umap(iris_mtx, method="naive", n_neighbors = 5)
+head(u$layout)
+u <- umap(iris_mtx, method="naive", n_neighbors = 30)
+head(u$layout)
+```
+
+```{r naive-nn-plot, echo=FALSE}
+draw_umap(iris_mtx, iris$Species, method = 'naive', n_neighbors = 3)$p
+draw_umap(iris_mtx, iris$Species, method = 'naive', n_neighbors = 5)$p
+draw_umap(iris_mtx, iris$Species, method = 'naive', n_neighbors = 30)$p
+```
+
+
+#### Using Python backend
+
+Results are sensitive on `n_neighbors`:
+
+```{r learn-nn-sweep}
+u <- umap(iris_mtx, method="umap-learn", n_neighbors = 3)
+head(u$layout)
+u <- umap(iris_mtx, method="umap-learn", n_neighbors = 5)
+head(u$layout)
+u <- umap(iris_mtx, method="umap-learn", n_neighbors = 30)
+head(u$layout)
+```
+
+```{r learn-nn-plot, echo=FALSE}
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', n_neighbors = 3)$p
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', n_neighbors = 5)$p
+draw_umap(iris_mtx, iris$Species, method = 'umap-learn', n_neighbors = 30)$p
+```
+
+`UMAP` object is updated:
+
+```{r learn-nn-debug}
+u$UMAP
+u$config$umap_learn_args
+```
+
+
+
+## Python
+
+Calling from a `reticulate` session: no problems.
+
+```{python py-init}
+import numpy as np
+from sklearn.datasets import load_iris
+import matplotlib.pyplot as plt
+import umap
+
+# Prepare data
+iris = load_iris()
+
+def draw_umap(data, labels, n_neighbors=15, min_dist=0.1, title='', close=True):
+   fit = umap.UMAP(
+      n_neighbors=n_neighbors,
+      min_dist=min_dist,
+      n_components=2
+   )
+   
+   u = fit.fit_transform(data);
+   
+   if (close):
+      plt.close('all')
+   plt.scatter(u[:,0], u[:,1], c=labels, s=1)
+   plt.title('nn = {}, d = {}'.format(n_neighbors, min_dist))
+   plt.show()
+```
+
+### Sweep on `min_dist`
+
+```{python py-d-sweep}
+draw_umap(iris.data, iris.target, min_dist=0.001)
+draw_umap(iris.data, iris.target, min_dist=0.1)
+draw_umap(iris.data, iris.target, min_dist=0.99)
+```
+
+### Sweep on `n_neighbors`
+
+```{python py-nn-sweep}
+draw_umap(iris.data, iris.target, n_neighbors=3)
+draw_umap(iris.data, iris.target, n_neighbors=5)
+draw_umap(iris.data, iris.target, n_neighbors=30)
+```
+
+### Python information
+
+```{python python-info, python, echo=FALSE}
+import IPython
+
+print(IPython.sys_info())
+```
+
+Packages in current environment:
+
+```{python pip-info, collapse=FALSE}
+import subprocess
+
+result = subprocess.run(['pip', 'list'], 
+   stdout=subprocess.PIPE, 
+   stderr=subprocess.PIPE, 
+   stdin=subprocess.PIPE, 
+   shell=True)
+   
+print(result.stdout.decode())
+```
+
+
+### R information
+
+```{r r-info}
+sessionInfo()
+```
+
