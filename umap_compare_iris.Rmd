@@ -38,18 +38,18 @@ iris_mtx <- iris[, c(1:4)]
 
 
 ```{r umap-plot}
-# Perform UMAP and plot
+# Utility to perform UMAP and plot
+
 draw_umap <- function(data_mtx, labels, method = '', n_neighbors = 15, min_dist = 0.1) {
       
    umap_config <- umap.defaults
    umap_config$n_neighbors <- n_neighbors
    umap_config$min_dist <- min_dist
+   umap_config$random_state <- 42         # Fix the seed
       
    u <- umap(data_mtx, 
              method = method, 
-             min_dist = min_dist, 
-             n_neighbors = n_neighbors, 
-             random_state=42)
+             config = umap_config)
    
    # Create data.frame with UMAP coordinates
    df_umap <- as.data.frame(u$layout)
@@ -68,6 +68,8 @@ draw_umap <- function(data_mtx, labels, method = '', n_neighbors = 15, min_dist 
 ### Sweep on `min_dist`
 
 #### Naive
+
+Calling `umap::umap` directly:
 
 ```{r naive-d-sweep}
 u <- umap(iris_mtx, method="naive", min_dist = 0.001)
@@ -90,7 +92,7 @@ draw_umap(iris_mtx, iris$Species, method = 'naive', min_dist = 0.99)$p
 
 #### Using Python backend
 
-Embeddings do not change:
+Calling `umap::umap` directly. Embeddings do not change:
 
 ```{r learn-d-sweep, collapse=TRUE}
 u <- umap(iris_mtx, method="umap-learn", min_dist = 0.001)
@@ -121,6 +123,8 @@ u$config$umap_learn_args
 
 #### Naive
 
+Calling `umap::umap` directly:
+
 ```{r naive-nn-sweep}
 u <- umap(iris_mtx, method="naive", n_neighbors = 3)
 head(u$layout)
@@ -139,7 +143,7 @@ draw_umap(iris_mtx, iris$Species, method = 'naive', n_neighbors = 30)$p
 
 #### Using Python backend
 
-Results are sensitive on `n_neighbors`:
+Calling `umap::umap` directly. Results are sensitive on `n_neighbors`:
 
 ```{r learn-nn-sweep}
 u <- umap(iris_mtx, method="umap-learn", n_neighbors = 3)

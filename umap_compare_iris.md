@@ -38,18 +38,18 @@ iris_mtx <- iris[, c(1:4)]
 ```
 
 ``` r
-# Perform UMAP and plot
+# Utility to perform UMAP and plot
+
 draw_umap <- function(data_mtx, labels, method = '', n_neighbors = 15, min_dist = 0.1) {
       
    umap_config <- umap.defaults
    umap_config$n_neighbors <- n_neighbors
    umap_config$min_dist <- min_dist
+   umap_config$random_state <- 42         # Fix the seed
       
    u <- umap(data_mtx, 
              method = method, 
-             min_dist = min_dist, 
-             n_neighbors = n_neighbors, 
-             random_state=42)
+             config = umap_config)
    
    # Create data.frame with UMAP coordinates
    df_umap <- as.data.frame(u$layout)
@@ -68,74 +68,76 @@ draw_umap <- function(data_mtx, labels, method = '', n_neighbors = 15, min_dist 
 
 #### Naive
 
+Calling `umap::umap` directly:
+
 ``` r
 u <- umap(iris_mtx, method="naive", min_dist = 0.001)
 head(u$layout)
-##          [,1]       [,2]
-## [1,] 12.23124 -0.3331542
-## [2,] 10.70993 -1.3126603
-## [3,] 10.56486 -0.7540255
-## [4,] 10.52019 -0.6786672
-## [5,] 12.34705 -0.5749329
-## [6,] 13.28508 -0.5979149
+##          [,1]     [,2]
+## [1,] 14.36673 4.376087
+## [2,] 15.60657 3.121390
+## [3,] 15.15142 2.840892
+## [4,] 15.28618 2.753419
+## [5,] 14.49462 4.497838
+## [6,] 14.07322 5.313414
 
 u <- umap(iris_mtx, method="naive", min_dist = 0.1)
 head(u$layout)
-##          [,1]       [,2]
-## [1,] 7.672398  0.7412341
-## [2,] 8.689200  2.4588411
-## [3,] 9.205215  2.0966858
-## [4,] 9.309127  2.0443477
-## [5,] 7.600816  0.5568721
-## [6,] 8.009618 -0.3382019
+##          [,1]        [,2]
+## [1,] 11.80572 -1.44453845
+## [2,] 10.91123  0.08487131
+## [3,] 11.29173  0.45482082
+## [4,] 11.50066  0.52628853
+## [5,] 11.95197 -1.33661190
+## [6,] 12.43361 -2.07485857
 
 u <- umap(iris_mtx, method="naive", min_dist = 0.99)
 head(u$layout)
-##          [,1]      [,2]
-## [1,] 15.72760 -6.823932
-## [2,] 12.87749 -3.536282
-## [3,] 12.29146 -5.260016
-## [4,] 11.70992 -5.043886
-## [5,] 14.76432 -7.472575
-## [6,] 15.86100 -9.229200
+##          [,1]     [,2]
+## [1,] 18.32657 5.640389
+## [2,] 21.17542 2.959346
+## [3,] 20.63161 4.782271
+## [4,] 21.19651 4.509576
+## [5,] 18.32815 6.075485
+## [6,] 16.66533 7.778181
 ```
 
 ![](umap_compare_iris_files/figure-gfm/naive-plot-1.png)<!-- -->![](umap_compare_iris_files/figure-gfm/naive-plot-2.png)<!-- -->![](umap_compare_iris_files/figure-gfm/naive-plot-3.png)<!-- -->
 
 #### Using Python backend
 
-Embeddings do not change:
+Calling `umap::umap` directly. Embeddings do not change:
 
 ``` r
 u <- umap(iris_mtx, method="umap-learn", min_dist = 0.001)
 head(u$layout)
-##          [,1]      [,2]
-## [1,] 6.003870  1.324167
-## [2,] 5.178583 -1.335126
-## [3,] 5.838859 -1.043555
-## [4,] 5.925804 -1.367196
-## [5,] 6.652371  1.206479
-## [6,] 6.416837  2.649150
+##           [,1]       [,2]
+## [1,]  8.819205 -1.1664281
+## [2,] 10.807510  0.3293927
+## [3,] 11.711818 -0.3999388
+## [4,] 11.658015  0.5556060
+## [5,]  9.282158 -0.7471911
+## [6,]  7.697951  0.4486978
 
 u <- umap(iris_mtx, method="umap-learn", min_dist = 0.1)
 head(u$layout)
-##          [,1]      [,2]
-## [1,] 6.003870  1.324167
-## [2,] 5.178583 -1.335126
-## [3,] 5.838859 -1.043555
-## [4,] 5.925804 -1.367196
-## [5,] 6.652371  1.206479
-## [6,] 6.416837  2.649150
+##           [,1]       [,2]
+## [1,]  8.819205 -1.1664281
+## [2,] 10.807510  0.3293927
+## [3,] 11.711818 -0.3999388
+## [4,] 11.658015  0.5556060
+## [5,]  9.282158 -0.7471911
+## [6,]  7.697951  0.4486978
 
 u <- umap(iris_mtx, method="umap-learn", min_dist = 0.99)
 head(u$layout)
-##          [,1]      [,2]
-## [1,] 6.003870  1.324167
-## [2,] 5.178583 -1.335126
-## [3,] 5.838859 -1.043555
-## [4,] 5.925804 -1.367196
-## [5,] 6.652371  1.206479
-## [6,] 6.416837  2.649150
+##           [,1]       [,2]
+## [1,]  8.819205 -1.1664281
+## [2,] 10.807510  0.3293927
+## [3,] 11.711818 -0.3999388
+## [4,] 11.658015  0.5556060
+## [5,]  9.282158 -0.7471911
+## [6,]  7.697951  0.4486978
 ```
 
 ![](umap_compare_iris_files/figure-gfm/learn-d-plot-1.png)<!-- -->![](umap_compare_iris_files/figure-gfm/learn-d-plot-2.png)<!-- -->![](umap_compare_iris_files/figure-gfm/learn-d-plot-3.png)<!-- -->
@@ -147,7 +149,7 @@ u$UMAP
 ## UMAP(a=True, angular_rp_forest=False, b=True, init='spectral',
 ##    learning_rate=1.0, local_connectivity=1.0, metric='euclidean',
 ##    metric_kwds=None, min_dist=0.99, n_components=2, n_epochs=200,
-##    n_neighbors=15, negative_sample_rate=5, random_state=805123336,
+##    n_neighbors=15, negative_sample_rate=5, random_state=456292475,
 ##    repulsion_strength=1.0, set_op_mix_ratio=1.0, spread=1.0,
 ##    target_metric='categorical', target_metric_kwds=None,
 ##    target_n_neighbors=-1, target_weight=0.5, transform_queue_size=4.0,
@@ -164,35 +166,37 @@ u$config$umap_learn_args
 
 #### Naive
 
+Calling `umap::umap` directly:
+
 ``` r
 u <- umap(iris_mtx, method="naive", n_neighbors = 3)
 ## Warning: failed creating initial embedding; using random embedding insteadx
 head(u$layout)
-##          [,1]      [,2]
-## [1,] 14.90616 -2.606132
-## [2,] 12.09402  0.754079
-## [3,] 10.88311  2.152049
-## [4,] 11.05938  1.891364
-## [5,] 14.99472 -2.536860
-## [6,] 13.67929 -3.709823
+##           [,1]       [,2]
+## [1,] 13.012195 -0.4292505
+## [2,]  9.046631  3.8466508
+## [3,] 18.047673 -0.4520897
+## [4,] 18.228759 -0.6641982
+## [5,] 12.906302 -0.3612390
+## [6,] 14.567439 -1.1256196
 u <- umap(iris_mtx, method="naive", n_neighbors = 5)
 head(u$layout)
-##          [,1]       [,2]
-## [1,] 17.21133 -0.3841951
-## [2,] 13.58648  2.2131810
-## [3,] 15.42747  0.7735690
-## [4,] 15.21598  1.1838502
-## [5,] 16.99997 -0.5407703
-## [6,] 18.11772 -1.8737140
+##          [,1]     [,2]
+## [1,] 13.99652 2.787580
+## [2,] 13.33622 5.437241
+## [3,] 14.87956 5.423412
+## [4,] 14.68465 5.548070
+## [5,] 13.66455 2.668442
+## [6,] 13.33333 1.144774
 u <- umap(iris_mtx, method="naive", n_neighbors = 30)
 head(u$layout)
-##            [,1]     [,2]
-## [1,] 1.87620769 10.23501
-## [2,] 0.47491206 11.17115
-## [3,] 0.25068178 10.56489
-## [4,] 0.07403647 10.83421
-## [5,] 1.67211635 10.44052
-## [6,] 2.57906196 10.67320
+##          [,1]     [,2]
+## [1,] 6.392613 7.826313
+## [2,] 4.848173 7.097369
+## [3,] 4.846648 7.496080
+## [4,] 4.652983 7.400787
+## [5,] 6.289593 7.688508
+## [6,] 7.229570 6.854126
 ```
 
     ## Warning: failed creating initial embedding; using random embedding insteadx
@@ -201,36 +205,36 @@ head(u$layout)
 
 #### Using Python backend
 
-Results are sensitive on `n_neighbors`:
+Calling `umap::umap` directly. Results are sensitive on `n_neighbors`:
 
 ``` r
 u <- umap(iris_mtx, method="umap-learn", n_neighbors = 3)
 head(u$layout)
-##          [,1]     [,2]
-## [1,] 5.807310 5.037849
-## [2,] 5.161141 7.221533
-## [3,] 8.344112 2.859802
-## [4,] 8.429193 2.616889
-## [5,] 6.159882 5.051479
-## [6,] 3.812690 3.147356
+##           [,1]       [,2]
+## [1,]  8.304262 2.93222761
+## [2,] 10.162989 0.03012535
+## [3,] 11.879377 3.14569926
+## [4,] 12.019746 3.04424500
+## [5,]  8.527401 3.16690326
+## [6,]  6.597533 5.04218483
 u <- umap(iris_mtx, method="umap-learn", n_neighbors = 5)
 head(u$layout)
 ##           [,1]       [,2]
-## [1,]  9.696502  1.2050042
-## [2,]  8.390391  4.7996664
-## [3,]  7.742820  3.0380390
-## [4,]  7.626956  3.5078447
-## [5,] 10.250016  1.2330544
-## [6,] 10.622615 -0.6588516
+## [1,]  9.675344 -0.1944102
+## [2,]  7.249076 -1.3784549
+## [3,]  6.611701 -0.2731864
+## [4,]  6.393136 -0.1056757
+## [5,]  9.615414  0.2248145
+## [6,] 10.173408  2.3548005
 u <- umap(iris_mtx, method="umap-learn", n_neighbors = 30)
 head(u$layout)
 ##          [,1]      [,2]
-## [1,] 8.543049 -2.910917
-## [2,] 9.978408 -4.501753
-## [3,] 9.569179 -4.663228
-## [4,] 9.709599 -4.946994
-## [5,] 8.324167 -3.412310
-## [6,] 7.398268 -2.479999
+## [1,] 6.673540 -6.023654
+## [2,] 4.093072 -6.217984
+## [3,] 4.929948 -6.488612
+## [4,] 4.932714 -6.784687
+## [5,] 6.224775 -6.016509
+## [6,] 6.832729 -4.785547
 ```
 
 ![](umap_compare_iris_files/figure-gfm/learn-nn-plot-1.png)<!-- -->![](umap_compare_iris_files/figure-gfm/learn-nn-plot-2.png)<!-- -->![](umap_compare_iris_files/figure-gfm/learn-nn-plot-3.png)<!-- -->
@@ -242,7 +246,7 @@ u$UMAP
 ## UMAP(a=True, angular_rp_forest=False, b=True, init='spectral',
 ##    learning_rate=1.0, local_connectivity=1.0, metric='euclidean',
 ##    metric_kwds=None, min_dist=0.1, n_components=2, n_epochs=200,
-##    n_neighbors=30, negative_sample_rate=5, random_state=805123336,
+##    n_neighbors=30, negative_sample_rate=5, random_state=456292475,
 ##    repulsion_strength=1.0, set_op_mix_ratio=1.0, spread=1.0,
 ##    target_metric='categorical', target_metric_kwds=None,
 ##    target_n_neighbors=-1, target_weight=0.5, transform_queue_size=4.0,
